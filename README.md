@@ -2,7 +2,7 @@
 
 An interactive data visualization project investigating whether Airbnb listing prices in New York City are associated with proximity to subway stations.
 
-**[Live App](https://airbnbsubwayanalysis-bvhbufaqgbhcg4g2.streamlit.app/)** | DATA 22700 - Winter 2026, University of Chicago
+**[Live App](https://data-visualization-project-bwnhsp4vx5qmga8rdwh2v8.streamlit.app/)** | DATA 22700 - Winter 2026, University of Chicago
 
 ## Research Question
 

@@ -65,7 +65,6 @@ st.sidebar.metric("Listings shown", f"{len(fdf):,}", f"of {len(df):,} total")
 st.title("Is Airbnb Listing Price Associated with Subway Proximity in NYC?")
 st.markdown("""
 **DATA 227 — Data Visualization Project | Winter 2026**
-*Cristian Garcia, Avital Mintz, Vedant Dangayach*
 
 ---
 
