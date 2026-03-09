@@ -68,10 +68,9 @@ st.markdown("""
 
 ---
 
-In New York City, a subway stop around the corner can mean the difference between a $150 and a $300
-night on Airbnb — or so it seems. Manhattan, home to the city's densest subway network, also commands
-the highest rental prices. But is subway access actually driving prices up, or is it just a coincidence
-of geography?
+In New York City, a subway stop around the corner can mean the difference between a \$150 and a \$300
+night on Airbnb. Manhattan, home to the city's densest subway network, also commands the highest rental
+prices. But is subway access actually driving prices up, or is it just a coincidence of geography?
 
 We set out to answer that question by merging **{:,} Airbnb listings** (sourced from
 [Inside Airbnb](http://insideairbnb.com/)) with **{:,} MTA subway station locations** (from
