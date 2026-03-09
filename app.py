@@ -182,7 +182,7 @@ col_c, col_d = st.columns(2)
 
 with col_c:
     st.markdown("### Subway Stations by Borough")
-    st.markdown("How is subway infrastructure spread across the city? This bar chart shows the raw count of station locations in each borough.")
+    st.markdown("How is subway infrastructure spread across the city? A simple bar chart is the right tool here: we are comparing a single quantitative value (station count) across a handful of categories, which is exactly the task where position along a common scale is most effective.")
     station_by_borough = subway_clean["Borough_Full"].value_counts().reset_index()
     station_by_borough.columns = ["Borough", "Stations"]
     fig_stn = px.bar(station_by_borough, x="Borough", y="Stations",
@@ -194,7 +194,7 @@ with col_c:
 
 with col_d:
     st.markdown("### Avg Stations within 0.5 mi per Listing")
-    st.markdown("Instead of counting stations per borough, this flips the perspective to the guest: how many stations can you walk to within half a mile of a typical listing?")
+    st.markdown("Instead of counting stations per borough, this flips the perspective to the guest: how many stations can you walk to within half a mile of a typical listing? We pair this bar chart with the one at left so viewers can compare the two side by side on a shared layout, making the contrast between raw station counts and per-listing accessibility immediately visible.")
     avg_stn = fdf.groupby("neighbourhood_group")["stations_05mi"].mean().reset_index()
     avg_stn.columns = ["Borough", "Avg Stations"]
     fig_avg = px.bar(avg_stn.sort_values("Avg Stations", ascending=False),
@@ -272,7 +272,7 @@ st.markdown("In some boroughs, the upward slope flattens or disappears entirely.
 
 # Distance to nearest station
 st.markdown("### Price by Distance to Nearest Station")
-st.markdown("Station count measures density of access; distance to the *nearest* station measures isolation. If transit proximity matters to guests, prices should drop as distance increases. The box plot below tests whether that holds.")
+st.markdown("Station count measures density of access; distance to the *nearest* station measures isolation. If transit proximity matters to guests, prices should drop as distance increases. We use a box plot rather than a bar chart of means because the full distributional spread matters here: two distance bins could share the same median but have very different variability, and a box plot surfaces that difference.")
 fig_dist = px.box(
     fdf.dropna(subset=["dist_bin"]),
     x="dist_bin", y="price_capped",
@@ -309,7 +309,7 @@ st.markdown("Nearby stations do correlate positively with price, but at 0.21 and
 
 # ── Neighborhood bubble chart ────────────────────────────────────────────────
 st.markdown("### Neighborhood-Level View")
-st.markdown("So far we have looked at listings and boroughs in aggregate. This bubble chart zooms into individual neighborhoods: each bubble is sized by listing count, positioned by station density (x) and median price (y), and colored by borough. Neighborhoods with many stations but low prices are especially telling, since they show where the subway-price story breaks down. Hover over any bubble to explore.")
+st.markdown("So far we have looked at listings and boroughs in aggregate. A scatter plot is the natural choice when we want to examine the relationship between two continuous variables (station density and median price), and the bubble encoding adds a third dimension (listing count as size) without requiring a separate chart. Color marks borough membership, so viewers can see whether neighborhoods cluster by geography or by transit access. Neighborhoods with many stations but low prices are especially telling, since they show where the subway-price story breaks down. Hover over any bubble to explore.")
 
 nbhd = fdf.groupby("neighbourhood").agg(
     median_price=("price", "median"),
