@@ -68,16 +68,16 @@ st.markdown("""
 
 ---
 
-New York City's subway network moves millions of people across the five boroughs, making transit access
-a central part of how the city functions. For short-term rental guests, being close to reliable transit
-often determines whether a stay feels convenient or frustrating — so examining this relationship can
-clarify which neighborhoods offer the best balance of price and accessibility, and what prospective
-Airbnb hosts should expect when setting prices. Ultimately, we want to ask: **what is the relationship
-between rental price and transit access in NYC?**
+In New York City, a subway stop around the corner can mean the difference between a $150 and a $300
+night on Airbnb — or so it seems. Manhattan, home to the city's densest subway network, also commands
+the highest rental prices. But is subway access actually driving prices up, or is it just a coincidence
+of geography?
 
-To answer this question, we merged **{:,} Airbnb listings** with **{:,} MTA subway station locations**,
-calculated each listing's distance to its nearest station, and counted how many stations fall within a
-half-mile radius.
+We set out to answer that question by merging **{:,} Airbnb listings** (sourced from
+[Inside Airbnb](http://insideairbnb.com/)) with **{:,} MTA subway station locations** (from
+[NYC Open Data](https://data.cityofnewyork.us/)), calculating each listing's distance to its nearest
+station and counting how many stations fall within a half-mile walk. What we found challenges the simple
+narrative — and reveals how much borough identity, not transit access, shapes the short-term rental market.
 """.format(len(df), len(subway_clean)))
 
 # Key metrics row
@@ -90,11 +90,12 @@ col4.metric("Neighborhoods", f"{fdf['neighbourhood'].nunique()}")
 # ── Interactive Map ──────────────────────────────────────────────────────────
 st.markdown("## Interactive Map")
 st.markdown("""
-Each dot below is an Airbnb listing, colored from yellow (cheaper) to red (expensive). Blue dots mark
-subway station entrances. Use the sidebar filters to explore specific boroughs, room types, or price
-ranges. Whether the spatial overlap between dense subway coverage and high prices reflects genuine
-transit-driven demand — or simply the broader economic premium of certain neighborhoods — is the
-question this analysis seeks to answer.
+We begin with a spatial overview. Each dot below is an Airbnb listing, colored from yellow (cheaper) to
+red (expensive) on a sequential YlOrRd scale chosen for its perceptual uniformity on light basemaps.
+Blue dots mark subway station entrances. A scatter mapbox is the natural choice here: it preserves the
+geographic relationships between listings and stations that summary statistics would obscure, and lets
+you zoom into any neighborhood to see the pattern up close. Use the sidebar filters to explore specific
+boroughs, room types, or price ranges.
 """)
 
 map_sample = fdf.sample(n=min(5000, len(fdf)), random_state=42) if len(fdf) > 5000 else fdf
@@ -133,7 +134,7 @@ fig_map.update_layout(
 )
 st.plotly_chart(fig_map, use_container_width=True)
 st.caption("Figure 1: Airbnb listings colored by capped nightly price (YlOrRd scale) overlaid with MTA subway station locations (blue). Hover over any listing for price, borough, room type, and nearby station count. Up to 5,000 listings sampled when filters return a larger dataset.")
-st.markdown("Manhattan listings, clustered around the densest subway network, also skew the most expensive. This spatial overlap is the core tension we will unpack throughout this analysis.")
+st.markdown("The pattern is immediately visible: Manhattan's cluster of red dots sits on top of the city's densest subway grid. Is transit access actually worth more per night — or are guests simply paying for a Manhattan address? That tension drives every chart that follows.")
 
 # ══════════════════════════════════════════════════════════════════════════════
 # SECTION: DATA OVERVIEW
@@ -141,10 +142,9 @@ st.markdown("Manhattan listings, clustered around the densest subway network, al
 st.markdown("---")
 st.markdown("## Data Overview")
 st.markdown("""
-Before testing the relationship between subway access and price, we need to understand the data itself.
-NYC's five boroughs differ dramatically in price, room type, and transit infrastructure. These baseline
-differences will matter a great deal when we interpret the subway proximity results, so let's establish
-them first.
+Before hunting for a subway effect, we need to know what the baseline looks like. NYC's five boroughs
+differ dramatically in price, room type, and transit infrastructure — and those differences will
+either amplify or mask any transit-price signal. Consider this section the "before" picture.
 """)
 
 col_a, col_b = st.columns(2)
@@ -212,10 +212,10 @@ with col_d:
 st.markdown("---")
 st.markdown("## Core Analysis: Price vs. Subway Proximity")
 st.markdown("""
-The data overview revealed a potential confound: Manhattan has both the highest prices and the densest
-subway network. So, when we see a positive correlation between station count and price, is that subway
-access doing the work — or just borough location? Below we examine this at multiple levels — overall,
-by borough, and by neighborhood.
+Now for the central question. The data overview surfaced a clear confound: Manhattan has both the
+highest prices and the densest subway grid. So when we see a positive correlation between station
+count and price, is transit access doing the work — or is it just geography? We attack this at three
+levels: the full dataset, within each borough, and at the neighborhood grain.
 """)
 
 # Binned bar chart
@@ -248,9 +248,10 @@ st.markdown("A general upward trend is visible — listings with more nearby sta
 st.markdown("### Price vs. Stations — By Borough")
 st.markdown(
     "Stratifying by borough removes the largest confound identified above — the Manhattan effect. "
-    "If subway proximity genuinely drives price, we should see an upward slope *within* each borough "
-    "independently, not just in the pooled data. Points with fewer than 10 listings are excluded to "
-    "limit noise from sparse station-count cells."
+    "A connected line chart is the right tool here: it makes the slope of each borough's trend "
+    "immediately comparable, and the color encoding lets all five boroughs share a single axis "
+    "without the clutter of five separate panels. Points with fewer than 10 listings are excluded "
+    "to limit noise from sparse station-count cells."
 )
 
 borough_means = fdf.groupby(["neighbourhood_group", "stations_05mi"]).agg(
@@ -270,7 +271,7 @@ fig_facet = px.line(
 fig_facet.update_layout(height=500)
 st.plotly_chart(fig_facet, use_container_width=True)
 st.caption("Figure 7: Mean nightly price vs. number of subway stations within 0.5 miles, broken out by borough. Only station counts with at least 10 listings are plotted.")
-st.markdown("In some boroughs, the trend between price and station count weakens considerably, suggesting that much of what looked like a 'subway effect' in the previous chart was really just due to 3 of the 5 boroughs. Does access to more stations still move the needle within a given neighborhood context?")
+st.markdown("The reveal: in some boroughs, the upward slope flattens or disappears entirely. What looked like a clean subway premium in the pooled data fractures once you control for where the listing sits. This is the confound in action — and exactly why the regression section below adds formal controls.")
 
 # Distance to nearest station
 st.markdown("### Price by Distance to Nearest Station")
@@ -340,10 +341,11 @@ st.markdown("This neighborhood scatter plot highlights a lack of within-borough 
 st.markdown("---")
 st.markdown("## Choropleth: Median Price by Borough")
 st.markdown("""
-Stepping back to the borough level gives a clean geographic summary of where prices land across the
-city. The following choropleth pairs median price with subway station density — hover over each borough
-to see both figures together. Median price is used rather than mean to reduce distortion from extreme
-luxury listings at the top of the distribution.
+A choropleth is the standard cartographic choice for showing how a single variable differs across
+predefined regions — here, NYC's five boroughs. It leverages spatial familiarity: most viewers instantly
+recognize the shape of Manhattan or Brooklyn, making the price gradient intuitive without a legend lookup.
+We map median price (rather than mean) to reduce distortion from extreme luxury listings. Hover over each
+borough to see subway density alongside price.
 """)
 
 borough_prices = fdf.groupby("neighbourhood_group").agg(
@@ -373,7 +375,7 @@ fig_choro.update_layout(
 )
 st.plotly_chart(fig_choro, use_container_width=True)
 st.caption("Figure 11: Choropleth map of median nightly Airbnb price by NYC borough. YlOrRd color scale; darker red = higher median price. Hover for mean price, listing count, and median nearby station count.")
-st.markdown("Manhattan's deep red confirms it as the most expensive market by a clear margin. Brooklyn registers a noticeably warmer hue than Queens, the Bronx, and Staten Island — consistent with its premium relative to the outer boroughs. Crucially, Manhattan also carries the highest median subway station count of any borough. This spatial coincidence of high price and high transit density is the central confound the regression section must unpack: are guests paying for transit access, or simply for being in Manhattan?")
+st.markdown("Manhattan glows the deepest red — and carries the highest median station count of any borough. That spatial coincidence is the crux of the analysis: guests may be paying for transit access, or simply for a Manhattan zip code. The regression that follows attempts to pry those two apart.")
 
 # ══════════════════════════════════════════════════════════════════════════════
 # SECTION: REGRESSION RESULTS
@@ -381,12 +383,13 @@ st.markdown("Manhattan's deep red confirms it as the most expensive market by a 
 st.markdown("---")
 st.markdown("## Statistical Analysis: OLS Regression")
 st.markdown("""
-We estimate three OLS regression models to test whether subway proximity predicts Airbnb price,
-progressively adding controls following a DAG-based causal framework:
+The visualizations above tell a story of confounding. To quantify how much of the apparent subway
+premium survives after accounting for borough, room type, and listing size, we estimate three
+progressively controlled OLS models — each one absorbing another layer of confound:
 
-- **Model 1:** Price ~ Stations *(bivariate)*
-- **Model 2:** Price ~ Stations + Borough
-- **Model 3:** Price ~ Stations + Borough + Room Type + Bedrooms + Beds
+- **Model 1:** Price ~ Stations *(naive bivariate — no controls)*
+- **Model 2:** Price ~ Stations + Borough *(absorbs the Manhattan effect)*
+- **Model 3:** Price ~ Stations + Borough + Room Type + Bedrooms + Beds *(full controls)*
 """)
 
 # Run regressions on full (unfiltered) data for stable estimates
@@ -454,11 +457,14 @@ fig_coef.update_layout(
     height=350
 )
 st.plotly_chart(fig_coef, use_container_width=True)
+st.caption("Figure 12: Coefficient on 'stations within 0.5 miles' across three OLS model specifications with 95% confidence intervals. A horizontal bar chart with error bars allows direct visual comparison of effect size and uncertainty across models; the dashed zero-line marks the threshold of no effect.")
 
 st.markdown(f"""
-**Interpretation:** Each additional subway station within 0.5 miles is associated with a
-**${m3.params['stations_05mi']:.2f}** change in nightly price, after controlling for borough,
-room type, and listing size.
+**The headline number:** each additional subway station within 0.5 miles is associated with a
+**${m3.params['stations_05mi']:.2f}** change in nightly price after controlling for borough,
+room type, and listing size. Notice how the coefficient shrinks dramatically from Model 1 to
+Model 2 — that drop represents the borough confound being absorbed. By Model 3, the remaining
+estimate reflects the subway-specific signal that survives a battery of controls.
 """)
 
 with st.expander("Full Model 3 Regression Table"):
@@ -468,34 +474,39 @@ with st.expander("Full Model 3 Regression Table"):
 # SECTION: CONCLUSIONS
 # ══════════════════════════════════════════════════════════════════════════════
 st.markdown("---")
-st.markdown("## Summary & Limitations")
+st.markdown("## What We Found — and What We Didn't")
 
 st.markdown("""
-### Key Findings
+The story we expected to find — *more subway stations nearby means higher Airbnb prices* — turned out
+to be more complicated than it first appeared.
 
-1. **Borough dominates pricing.** Manhattan has the highest prices *and* the densest subway coverage,
-   creating a strong confound.
-2. **Raw correlation is positive** — more subway stations nearby correlates with higher prices — but
-   much of this is driven by borough.
-3. **After controlling for borough, room type, and size,** the relationship between subway proximity
-   and price is revealed more clearly by the regression.
-4. **Room type and listing size** are the strongest individual predictors of price.
+1. **Borough is the real price-maker.** Manhattan commands the highest prices *and* sits atop the
+   densest subway grid. Until you account for that overlap, the "subway effect" is largely a
+   "Manhattan effect."
+2. **The raw correlation is real but misleading.** Listings near more stations do cost more on average —
+   but strip out borough, room type, and listing size, and the per-station premium shrinks substantially.
+3. **Transit access is not nothing.** Even in the fully controlled model, each additional nearby station
+   carries a statistically significant (if modest) price association — suggesting guests do value
+   walkable transit, just less than they value being in the right borough.
+4. **Bedrooms and room type dwarf subway access** as price predictors. A second bedroom matters far more
+   than a second subway line.
 
 ### Limitations
 
-- **Observational data** — we cannot claim causation. Subway stations correlate with other
-  neighborhood amenities (restaurants, nightlife) that also drive price.
-- **Missing variables** — listing quality, photos, specific amenities, and seasonality are not
-  captured.
-- **Cross-sectional** — a single snapshot in time; prices change seasonally.
-- **Distance metric** — straight-line distance differs from walking distance; actual transit
-  accessibility depends on service frequency.
+- **Correlation, not causation.** Subway stations cluster near restaurants, nightlife, and employment
+  centers that independently drive demand. We cannot isolate transit access from these co-located
+  amenities with observational data alone.
+- **Missing variables.** Listing quality (photos, reviews text, specific amenities) and host pricing
+  strategy are unobserved.
+- **Single snapshot.** Prices fluctuate seasonally; our 2024 cross-section cannot capture that.
+- **Straight-line distance** approximates walking distance but ignores service frequency, transfers,
+  and elevator accessibility.
 
-### Future Directions
+### Where This Could Go Next
 
-- Incorporate time-series data for seasonal analysis
-- Add neighborhood-level controls (median income, walkability, crime)
-- Use natural experiments (new station openings) for causal inference
+- Time-series data to capture seasonal pricing dynamics
+- Neighborhood-level controls (median income, walkability, crime rates)
+- Natural experiments — new station openings — to move toward causal inference
 """)
 
 st.markdown("---")
